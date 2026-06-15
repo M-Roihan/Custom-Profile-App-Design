@@ -1,22 +1,23 @@
 import { motion } from 'motion/react';
-import { User, Pencil, Palette, Settings, Users } from 'lucide-react';
+import { Home, Compass, User, Settings, Plus } from 'lucide-react';
 import type { PageType, Template } from './types';
 
 interface BottomNavProps {
   currentPage: PageType;
   onNavigate: (page: PageType) => void;
+  onCreatePost: () => void;
   template: Template;
 }
 
 const NAV_ITEMS = [
+  { id: 'home' as PageType, label: 'Feed', Icon: Home },
+  { id: 'discover' as PageType, label: 'Discover', Icon: Compass },
+  { id: 'create-post' as PageType, label: 'Post', Icon: Plus, isCenter: true },
   { id: 'profile' as PageType, label: 'Profile', Icon: User },
-  { id: 'connect' as PageType, label: 'Connect', Icon: Users },
-  { id: 'edit' as PageType, label: 'Edit', Icon: Pencil },
-  { id: 'templates' as PageType, label: 'Templates', Icon: Palette },
   { id: 'settings' as PageType, label: 'Settings', Icon: Settings },
 ];
 
-export function BottomNav({ currentPage, onNavigate, template }: BottomNavProps) {
+export function BottomNav({ currentPage, onNavigate, onCreatePost, template }: BottomNavProps) {
   return (
     <div
       className="flex items-center border-t"
@@ -26,8 +27,38 @@ export function BottomNav({ currentPage, onNavigate, template }: BottomNavProps)
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}
     >
-      {NAV_ITEMS.map(({ id, label, Icon }) => {
+      {NAV_ITEMS.map(({ id, label, Icon, isCenter }) => {
         const isActive = currentPage === id;
+
+        // Center button (Create Post) — special FAB style
+        if (isCenter) {
+          return (
+            <button
+              key={id}
+              onClick={onCreatePost}
+              className="flex-1 flex flex-col items-center gap-0.5 py-2 relative"
+            >
+              <motion.div
+                whileTap={{ scale: 0.85 }}
+                className="w-10 h-10 rounded-full flex items-center justify-center shadow-md -mt-3"
+                style={{
+                  background: `linear-gradient(135deg, ${template.accentColor}, ${template.buttonBg})`,
+                  color: template.accentText,
+                  boxShadow: `0 3px 12px ${template.accentColor}40`,
+                }}
+              >
+                <Plus size={22} strokeWidth={2.5} />
+              </motion.div>
+              <span
+                className="text-[10px] font-medium"
+                style={{ color: template.navInactive }}
+              >
+                {label}
+              </span>
+            </button>
+          );
+        }
+
         return (
           <button
             key={id}

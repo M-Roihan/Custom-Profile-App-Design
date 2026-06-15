@@ -1,11 +1,14 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { motion } from 'motion/react';
 import {
   Lock, Bell, LogOut, ChevronRight, Eye, EyeOff,
   MapPin, Heart, Share2, ThumbsUp, MessageCircle, UserPlus,
+  Link2, Check, Unlink,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import type { AppSettings, UserProfile, Template } from './types';
+import { PlatformIcon } from './shared/PlatformBadge';
+import type { AppSettings, UserProfile, Template, PlatformKey } from './types';
+import { PLATFORM_COLORS, PLATFORM_LABELS } from './types';
 
 interface SettingsPageProps {
   settings: AppSettings;
@@ -50,7 +53,7 @@ function SettingRow({
           {icon}
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-medium text-gray-800">{label}</p>
+          <p className="text-sm font-medium" style={{ color: '#1f2937' }}>{label}</p>
           {description && <p className="text-xs text-gray-400 truncate">{description}</p>}
         </div>
       </div>
@@ -67,12 +70,21 @@ function SectionHeader({ title }: { title: string }) {
   );
 }
 
+const ALL_PLATFORMS: PlatformKey[] = ['instagram', 'tiktok', 'linkedin', 'youtube', 'twitter', 'github'];
+
 export function SettingsPage({ settings, onUpdate, profile, template }: SettingsPageProps) {
   const update = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
     onUpdate({ ...settings, [key]: value });
   };
 
   const accentColor = template.accentColor;
+
+  // Determine which platforms are connected
+  const connectedPlatforms = new Set(profile.connectedAccounts.map(a => a.platform));
+
+  const handleConnectAll = () => {
+    toast.success('Menghubungkan semua akun...', { description: 'Flow OAuth dimulai untuk semua platform' });
+  };
 
   return (
     <motion.div
@@ -111,6 +123,74 @@ export function SettingsPage({ settings, onUpdate, profile, template }: Settings
       </div>
 
       <div className="px-4 pb-28">
+        {/* ── SSO Dashboard ── */}
+        <SectionHeader title="Akun Tersambung (SSO)" />
+        <div
+          className="rounded-2xl overflow-hidden"
+          style={{ background: template.cardBg, border: `1px solid ${template.cardBorder}` }}
+        >
+          {ALL_PLATFORMS.map((platform) => {
+            const isConnected = connectedPlatforms.has(platform);
+            const account = profile.connectedAccounts.find(a => a.platform === platform);
+            return (
+              <div
+                key={platform}
+                className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0"
+                style={{ borderColor: template.cardBorder }}
+              >
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: `${PLATFORM_COLORS[platform]}15` }}
+                >
+                  <PlatformIcon platform={platform} size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium" style={{ color: template.textPrimary }}>
+                    {PLATFORM_LABELS[platform]}
+                  </p>
+                  {isConnected && account && (
+                    <p className="text-[10px]" style={{ color: template.textSecondary }}>
+                      @{account.username}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {isConnected ? (
+                    <span
+                      className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                      style={{ background: '#10b98120', color: '#10b981' }}
+                    >
+                      <Check size={10} />
+                      Terhubung
+                    </span>
+                  ) : (
+                    <span
+                      className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                      style={{ background: '#f3f4f6', color: '#9ca3af' }}
+                    >
+                      <Unlink size={10} />
+                      Belum
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Connect All Button */}
+          <div className="px-4 py-3" style={{ borderTop: `1px solid ${template.cardBorder}` }}>
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={handleConnectAll}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold"
+              style={{ background: accentColor, color: template.accentText }}
+            >
+              <Link2 size={14} />
+              Hubungkan Semua Akun
+            </motion.button>
+          </div>
+        </div>
+
         {/* Privacy Settings */}
         <SectionHeader title="Privacy" />
         <div
@@ -223,7 +303,7 @@ export function SettingsPage({ settings, onUpdate, profile, template }: Settings
         </motion.button>
 
         <p className="text-center text-xs text-gray-400 mt-6">
-          CustomProfile v1.0 · Made with ♥
+          CustomProfile v2.0 · Made with ♥
         </p>
       </div>
     </motion.div>

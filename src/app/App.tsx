@@ -6,8 +6,10 @@ import { ProfileView } from './components/ProfileView';
 import { EditProfile } from './components/EditProfile';
 import { TemplateSelector } from './components/TemplateSelector';
 import { SettingsPage } from './components/SettingsPage';
-import { ConnectPage } from './components/ConnectPage';
+import { HomePage } from './components/HomePage';
+import { DiscoverPage } from './components/DiscoverPage';
 import { BottomNav } from './components/BottomNav';
+import { CreatePostModal } from './components/shared/CreatePostModal';
 import {
   DEFAULT_PROFILE,
   DEFAULT_SETTINGS,
@@ -18,9 +20,10 @@ import {
 } from './components/types';
 
 export default function App() {
-  const [page, setPage] = useState<PageType>('profile');
+  const [page, setPage] = useState<PageType>('home');
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [showCreatePost, setShowCreatePost] = useState(false);
 
   const currentTemplate = TEMPLATES.find(t => t.id === profile.templateId) ?? TEMPLATES[0];
 
@@ -37,7 +40,11 @@ export default function App() {
     setPage('profile');
   };
 
-  const showBottomNav = page === 'profile' || page === 'settings' || page === 'connect';
+  const handleUpdateProfile = (updated: UserProfile) => {
+    setProfile(updated);
+  };
+
+  const showBottomNav = page === 'home' || page === 'profile' || page === 'settings' || page === 'discover';
 
   return (
     <div className="size-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #667eea22, #764ba222), #f1f5f9' }}>
@@ -90,6 +97,13 @@ export default function App() {
         {/* Page Content */}
         <div className="flex-1 overflow-hidden relative">
           <AnimatePresence mode="wait">
+            {page === 'home' && (
+              <HomePage
+                key="home"
+                template={currentTemplate}
+                profile={profile}
+              />
+            )}
             {page === 'profile' && (
               <ProfileView
                 key="profile"
@@ -97,11 +111,12 @@ export default function App() {
                 template={currentTemplate}
                 settings={settings}
                 onEdit={() => setPage('edit')}
+                onUpdateProfile={handleUpdateProfile}
               />
             )}
-            {page === 'connect' && (
-              <ConnectPage
-                key="connect"
+            {page === 'discover' && (
+              <DiscoverPage
+                key="discover"
                 template={currentTemplate}
               />
             )}
@@ -139,10 +154,22 @@ export default function App() {
           <BottomNav
             currentPage={page}
             onNavigate={setPage}
+            onCreatePost={() => setShowCreatePost(true)}
             template={currentTemplate}
           />
         )}
       </div>
+
+      {/* Global Create Post Modal */}
+      <AnimatePresence>
+        {showCreatePost && (
+          <CreatePostModal
+            template={currentTemplate}
+            connectedPlatforms={profile.connectedAccounts.map(a => a.platform)}
+            onClose={() => setShowCreatePost(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

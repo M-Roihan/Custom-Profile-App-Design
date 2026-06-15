@@ -1,8 +1,8 @@
 import { ReactNode, useState } from 'react';
-import { motion } from 'motion/react';
-import { ArrowLeft, Check, MapPin, Globe, User, FileText, AtSign, X } from 'lucide-react';
-import type { UserProfile } from './types';
-import { AVATAR_EMOJIS, AVATAR_COLORS, INTEREST_OPTIONS, SOCIAL_PLATFORMS } from './types';
+import { motion, AnimatePresence } from 'motion/react';
+import { ArrowLeft, Check, MapPin, Globe, User, FileText, AtSign, X, ChevronDown, ChevronUp } from 'lucide-react';
+import type { UserProfile, SubInterestCategory } from './types';
+import { AVATAR_EMOJIS, AVATAR_COLORS, INTEREST_OPTIONS, SOCIAL_PLATFORMS, DEFAULT_SUB_INTERESTS } from './types';
 
 // Social icons for the edit form
 const SOCIAL_ICON_CHARS: Record<string, string> = {
@@ -24,6 +24,7 @@ export function EditProfile({ profile, onSave, onCancel }: EditProfileProps) {
   const [draft, setDraft] = useState<UserProfile>({ ...profile });
   const [activeSection, setActiveSection] = useState<'avatar' | 'info' | 'interests' | 'social'>('avatar');
   const [hasChanges, setHasChanges] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   const update = <K extends keyof UserProfile>(key: K, value: UserProfile[K]) => {
     setDraft(prev => ({ ...prev, [key]: value }));
@@ -44,6 +45,29 @@ export function EditProfile({ profile, onSave, onCancel }: EditProfileProps) {
       ? draft.interests.filter(i => i !== interest)
       : [...draft.interests, interest]
     );
+  };
+
+  const toggleSubInterest = (categoryIdx: number, itemIdx: number) => {
+    const newSubInterests = draft.subInterests.map((cat, ci) => {
+      if (ci !== categoryIdx) return cat;
+      return {
+        ...cat,
+        items: cat.items.map((item, ii) => {
+          if (ii !== itemIdx) return item;
+          return { ...item, selected: !item.selected };
+        }),
+      };
+    });
+    update('subInterests', newSubInterests);
+  };
+
+  const toggleCategory = (category: string) => {
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
+      return next;
+    });
   };
 
   const handleCancel = () => {
@@ -226,7 +250,7 @@ export function EditProfile({ profile, onSave, onCancel }: EditProfileProps) {
           </motion.div>
         )}
 
-        {/* INTERESTS SECTION */}
+        {/* INTERESTS SECTION — with Sub-Interest Filtering */}
         {activeSection === 'interests' && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
@@ -263,6 +287,107 @@ export function EditProfile({ profile, onSave, onCancel }: EditProfileProps) {
                 {draft.interests.length}/8 selected
               </p>
             )}
+
+            {/* Sub-Interest Filtering */}
+            <div className="mt-8">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                🎯 Sub-Interests (Detail Minat)
+              </p>
+              <p className="text-xs text-gray-400 mb-4">
+                Perjelas minat kamu dengan sub-kategori spesifik
+              </p>
+
+              <div className="space-y-2">
+                {draft.subInterests.map((category, catIdx) => {
+                  const isExpanded = expandedCategories.has(category.category);
+                  const selectedCount = category.items.filter(i => i.selected).length;
+                  return (
+                    <div
+                      key={category.category}
+                      className="rounded-xl border border-gray-100 overflow-hidden"
+                    >
+                      {/* Category header */}
+                      <button
+                        onClick={() => toggleCategory(category.category)}
+                        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">{category.emoji}</span>
+                          <span className="text-sm font-semibold text-gray-800">
+                            {category.category}
+                          </span>
+                          {selectedCount > 0 && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-600 font-medium">
+                              {selectedCount}
+                            </span>
+                          )}
+                        </div>
+                        {isExpanded ? (
+                          <ChevronUp size={16} className="text-gray-400" />
+                        ) : (
+                          <ChevronDown size={16} className="text-gray-400" />
+                        )}
+                      </button>
+
+                      {/* Sub-items */}
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="px-4 pb-3 flex flex-wrap gap-2">
+                              {category.items.map((item, itemIdx) => (
+                                <motion.button
+                                  key={item.label}
+                                  whileTap={{ scale: 0.92 }}
+                                  onClick={() => toggleSubInterest(catIdx, itemIdx)}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs transition-all"
+                                  style={{
+                                    background: item.selected ? '#6366f1' : '#f3f4f6',
+                                    color: item.selected ? '#ffffff' : '#6b7280',
+                                    border: item.selected ? 'none' : '1px solid #e5e7eb',
+                                  }}
+                                >
+                                  {item.selected && <Check size={10} />}
+                                  {item.label}
+                                </motion.button>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Selected sub-interests preview */}
+              {(() => {
+                const allSelected = draft.subInterests
+                  .flatMap(c => c.items.filter(i => i.selected).map(i => i.label));
+                return allSelected.length > 0 ? (
+                  <div className="mt-4 p-3 rounded-xl bg-indigo-50 border border-indigo-100">
+                    <p className="text-[10px] font-semibold text-indigo-500 uppercase tracking-wider mb-2">
+                      Akan tampil di profil:
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {allSelected.map(sub => (
+                        <span
+                          key={sub}
+                          className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-medium"
+                        >
+                          {sub}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : null;
+              })()}
+            </div>
           </motion.div>
         )}
 

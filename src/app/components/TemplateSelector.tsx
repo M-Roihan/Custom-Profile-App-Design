@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Check } from 'lucide-react';
+import { ArrowLeft, Check, Info } from 'lucide-react';
 import type { UserProfile, Template } from './types';
 import { TEMPLATES } from './types';
 
@@ -126,12 +126,33 @@ export function TemplateSelector({ currentTemplateId, profile, onSelect, onBack 
         </button>
         <div>
           <h2 className="text-base text-gray-900">Templates</h2>
-          <p className="text-xs text-gray-500">Pick your vibe</p>
+          <p className="text-xs text-gray-500">Tampilan di Custom Profile</p>
         </div>
       </div>
 
       {/* Template Grid */}
       <div className="flex-1 overflow-y-auto scrollbar-hide p-4">
+        {/* ℹ️ Template Scope Clarification — Feature 9 */}
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4 p-3.5 rounded-2xl flex gap-3 items-start"
+          style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}
+        >
+          <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
+            <Info size={16} className="text-blue-600" />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-blue-800 mb-0.5">
+              ℹ️ Catatan Penting
+            </p>
+            <p className="text-[11px] text-blue-700 leading-relaxed">
+              Template hanya memengaruhi tampilan profil kamu <strong>di dalam Custom Profile</strong>. 
+              Tampilan di Instagram, TikTok, dan platform lain <strong>tidak berubah</strong>.
+            </p>
+          </div>
+        </motion.div>
+
         <div className="grid grid-cols-2 gap-3">
           {TEMPLATES.map((template, i) => (
             <motion.div
